@@ -5,6 +5,7 @@
 # shell script to install Debian 13 from the live session with french language,
 # fr-latin9 keyboard, zram swap, BTRFS subvolumes for /, /.snapshots, /var, /temp, /opt, /home
 # as in Spirallinux, snapshots managed by snapper and grub-btrfs managing snapshot entries in grub
+# also installs GNOME and synaptic package manager
   
 
 set -e  # Arrête le script en cas d'erreur
@@ -95,12 +96,29 @@ mount -t sysfs /sys /mnt/sys
 mount -B /dev /mnt/dev
 mount -t devpts /dev/pts /mnt/dev/pts
 
-# Installation du noyau et de GRUB
-echo "Installation du noyau et de GRUB..."
+# Configuration des dépôts (main, contrib, non-free, backports)
+echo "Configuration des dépôts APT..."
+cat > /mnt/etc/apt/sources.list <<EOF
+deb http://deb.debian.org/debian trixie main contrib non-free
+deb-src http://deb.debian.org/debian trixie main contrib non-free
+
+deb http://deb.debian.org/debian trixie-updates main contrib non-free
+deb-src http://deb.debian.org/debian trixie-updates main contrib non-free
+
+deb http://deb.debian.org/debian trixie-backports main contrib non-free
+deb-src http://deb.debian.org/debian trixie-backports main contrib non-free
+
+deb http://security.debian.org/debian-security trixie-security main contrib non-free
+deb-src http://security.debian.org/debian-security trixie-security main contrib non-free
+EOF
+
+# Installation du noyau, GRUB, GNOME, synaptic et outils
+echo "Installation du noyau, GRUB, GNOME et synaptic..."
 chroot /mnt /bin/bash -c "apt-get update"
 chroot /mnt /bin/bash -c "apt-get install -y --no-install-recommends \
     linux-image-amd64 linux-headers-amd64 grub-efi-amd64 grub-btrfs \
-    snapper zram-tools btrfs-progs locales dialog"
+    snapper zram-tools btrfs-progs locales dialog \
+    task-gnome-desktop synaptic firmware-linux firmware-linux-nonfree"
 
 # Configuration de GRUB pour BTRFS
 echo "Configuration de GRUB pour BTRFS..."
@@ -158,4 +176,5 @@ chroot /mnt /bin/bash -c "update-locale LANG=$LANG"
 # Nettoyage
 umount -R /mnt
 
-echo "Installation terminée ! Redémarre ton système."
+echo "Installation terminée ! Redémarre ton système avec :"
+echo "  reboot"
